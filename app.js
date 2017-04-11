@@ -1,3 +1,3 @@
-var timer = require('./timer')
+var timer = require("./timer")
 
-timer.timer()
+timer.timer();

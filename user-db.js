@@ -1,28 +1,15 @@
 'use strict';
 //Cloudant DB
 var Cloudant = require('cloudant');
-var me = '724d6155-9384-406e-a51d-970c41e48424-bluemix';
-var password = '37d29e2ceb3fd6067a77a86ba019ad23270d935ca121f639366ae3adea2cecd9';
+var me = "paulportela";
+var apikey = "thentskewitingliterentse";
+var password = "a3895adfe69c5717b1eba348c4fd26e56ce443ae";
+var cloudant = Cloudant({account:me, key:apikey, password:password});
 
-var cloudant = Cloudant({account:me, password:password});
 var user_db = cloudant.db.use('fit_users')
-var fit_daily_db = cloudant.db.use('fit_daily_activiy');
+var fit_steps = cloudant.db.use('fit_steps');
+var fit_mass = cloudant.db.use('fit_body_mass');
 
-exports.update = exports.create = function(user) {
-    user_db.insert(user, function(err, body, header) {
-      if (err) {
-        return console.log('[fit_users.insert] ', err.message);
-      }
-    });
-};
-
-exports.read = function(user) {
-	user_db.insert(user, function(err, body, header) {
-		if (err) {
-			return console.log('[fit_users.insert] ', err.message);
-		}
-	});
-};
 
 exports.getAllUsers = function(callback) {
 	user_db.list({include_docs:true}, function (err, data) {
@@ -30,12 +17,41 @@ exports.getAllUsers = function(callback) {
 	});
 };
 
-exports.insertActivities = function(obj) {
-    fit_daily_db.insert(obj, function(err, body, header) {
-      if (err) {
-        return console.log('[fit_daily_activiy.insert] ', err.message);
-      }
+exports.insertSteps = function(obj, cb) {
+    fit_steps.insert(obj, function(err, body, header) {
+      if (!err)
+        cb();
+      else
+        console.log('[fit_steps.insert] ', err.message);
     });
 };
 
+exports.insertMass = function(obj, cb) {
+    fit_mass.insert(obj, function(err, body, header) {
+      if (!err)
+        cb();
+      else
+        console.log('[fit_body_mass.insert] ', err.message);
+    });
+};
 
+exports.getSteps = function(id, cb) {
+  fit_steps.get(id, function(err, data) {
+    if(!err) {
+      cb(data);
+    }
+    else {
+      console.log('GET STEPS ', err.message)
+      cb(null);
+    }
+  });
+}
+
+exports.getMass = function(id, cb) {
+  fit_mass.get(id, function(err, data) {
+    if(!err)
+      cb(data);
+    else
+      cb(null);
+  });
+}

@@ -20,7 +20,8 @@
     "request": "*",
     "passport-local": "*",
     "cloudant": "*",
-    "async": "*"
+    "async": "*",
+    "sleep": "*"
   }
 }
 
