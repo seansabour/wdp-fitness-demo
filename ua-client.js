@@ -139,7 +139,7 @@ function processMass(name, user_id, periods, cb) {
             if(obj_mass != null) {
                 var old_mass = obj_mass.body_mass;
                 var new_mass = activity.body_mass;
-                if(new_mass < old_mass) {
+                if(new_mass != old_mass) {
                     obj_mass.body_mass = new_mass;
                     userdb.insertMass(obj_mass, function() {
                         callback();
