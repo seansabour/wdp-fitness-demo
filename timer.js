@@ -1,4 +1,4 @@
-var uaclient = require("./ua-client");
+var updater = require("./updater");
 
 exports.timer = function() {
 	console.log("Interval is set to get aggregate data of users");

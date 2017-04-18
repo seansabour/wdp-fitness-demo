@@ -1,9 +1,9 @@
 'use strict';
 //Cloudant DB
 var Cloudant = require('cloudant');
-var me = "paulportela";
-var apikey = "thentskewitingliterentse";
-var password = "a3895adfe69c5717b1eba348c4fd26e56ce443ae";
+var me = "gobot";
+var apikey = "iturcationdelyarmseempea";
+var password = "2ea72dd2d4894ddda713902dc160e479b2a21809";
 var cloudant = Cloudant({account:me, key:apikey, password:password});
 
 var user_db = cloudant.db.use('fit_users')
@@ -55,3 +55,13 @@ exports.getMass = function(id, cb) {
       cb(null);
   });
 }
+
+// user_db.destroy("3100021F7S", "1-7a25cc520ab7364c8c2c5a33d241be21", function(err, data) {
+//   console.log(data);
+// })
+// user_db.list({include_docs:true}, function (err, data) {
+//     console.log(JSON.stringify(data));
+// });
+fit_steps.list({include_docs:true}, function (err, data) {
+    console.log(JSON.stringify(data));
+});

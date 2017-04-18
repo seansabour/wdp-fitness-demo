@@ -4,79 +4,70 @@ var sleep = require('sleep');
 
 const userdb = require("./user-db");
 
-var CLIENT_ID = "hrjfvqafh9s3phqfk9btp3exr3yg2apf"
-var CLIENT_SECRET = "vzBVAX9knJCFGRu8yx65q24e7dt8dS88vZCXCStJKrB"
+var CLIENT_ID = "hrjfvqafh9s3phqfk9btp3exr3yg2apf";
+var CLIENT_SECRET = "vzBVAX9knJCFGRu8yx65q24e7dt8dS88vZCXCStJKrB";
 
-exports.processData = function() {
-    getAggregates(function(data) {
-        for(var i in data) {
-            var both = data[i];
-            var name = both.name;
-            var au_id = both.au_id;
-            for (j = 0; j < both.length; j++) {
-                var one = both[j];
-                var type = one._links.data_type[0].id;
-                var periods = one.periods;
-                if(type == 'steps_summary') {
-                    processSteps(name, au_id, periods, function() {
-                        console.log("Processed steps");
-                    });
-                } else if(type == 'body_mass_summary') {
-                    processMass(name, au_id, periods, function() {
-                        console.log("Processed mass");
-                    });
-                }
+exports.processData = function(user, cb) {
+    getData(user, function(data) {
+        var name = user.doc.name;
+        var au_id = user.doc.au_id;
+        var isSteps = user.doc.steps;
+        var isMass = user.doc.weight;
+
+        var aggregates = data.aggregates;
+        for(var i in aggregates) {
+            var one = aggregates[i];
+            var name = data.name;
+            var au_id = data.au_id;
+            var type = one._links.data_type[0].id;
+            var periods = one.periods;
+            if(type == "steps_summary" && isSteps == "yes") {
+                console.log("processing steps");
+                processSteps(name, au_id, periods, function() {
+                    console.log("Processed steps");
+                });
+            } else if(type == "body_mass_summary" && isMass == "yes") {
+                console.log("processing mass");
+                processMass(name, au_id, periods, function() {
+                    console.log("Processed mass");
+                });
             }
         }
     });
 }
 
-function getAggregates(cb) {
-	userdb.getAllUsers(function(rows) {
-		var data = [];
-        getData(rows, data, 0, function(data) {
-            cb(data);
-        });
-	});
-}
-
-function getData(rows, data, r, cb){
-    if( r < rows.length ) {
-        var name = rows[r].doc.name;
-        var au_id = rows[r].doc.au_id
-        var now = new Date();
-        var headers = {
-            'Authorization':       'Bearer ' + rows[r].doc.access_token,
-            'Api-Key': CLIENT_ID,
-            'Content-Type':     'application/json'
-        }
-        var options = {
-            url: 'https://api.ua.com/v7.1/aggregate/',
-            method: 'GET',
-            headers: headers,
-            qs: {
-                data_types: 'steps_summary,body_mass_summary',
-                period: 'P1D',
-                start_datetime: 2017 + '-' + 3 + '-' + 17,
-                end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate(),
-                user_id: au_id
-            }
-        }
-        request(options, function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                var body = JSON.parse(body);
-                var aggregates = body._embedded.aggregates;
-                aggregates.name = name;
-                aggregates.au_id = au_id;
-                data.push(aggregates);
-            } else {
-                data.push({error: null});
-            }
-            getData(rows, data, r+1, cb);
-        })
-    } else {
-        cb(data);
+function getData(user, cb) {
+    var name = user.doc.name;
+    var au_id = user.doc.au_id;
+    var now = new Date();
+    var headers = {
+        'Authorization':       'Bearer ' + user.doc.access_token,
+        'Api-Key': CLIENT_ID,
+        'Content-Type':     'application/json'
     }
+    var options = {
+        url: 'https://api.ua.com/v7.1/aggregate/',
+        method: 'GET',
+        headers: headers,
+        qs: {
+            data_types: 'steps_summary,body_mass_summary',
+            period: 'P1D',
+            start_datetime: 2017 + '-' + 3 + '-' + 17,
+            end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate(),
+            user_id: au_id
+        }
+    }
+    request(options, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var body = JSON.parse(body);
+            var embedded = body._embedded;
+            embedded.name = name;
+            embedded.au_id = au_id;
+            cb(embedded);
+        } else {
+            cb({error: null});
+        }
+    });
 }
 
 function processSteps(name, user_id, periods, cb) {
@@ -161,6 +152,3 @@ function processMass(name, user_id, periods, cb) {
         }
     });
 }
-
-
-// processData()
