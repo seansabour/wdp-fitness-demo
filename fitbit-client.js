@@ -17,13 +17,15 @@ function getSteps(user_id, access_token, cb) {
         url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-04-01/"+date+".json",
         headers: headers,
     };
+
+    console.log("options: " + JSON.stringify(options));
                 
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var body = JSON.parse(body);
             cb(body["activities-steps"]);
         } else {
-            console.log("Error for getting steps");
+            console.log("Error for getting fitbit steps");
             console.log(error);
         }
     });
@@ -46,7 +48,7 @@ function getMass(user_id, access_token, cb) {
         if (!error && response.statusCode == 200) {
             cb(body.weight);
         } else {
-            console.log("Error for getting mass");
+            console.log("Error for getting fitbit mass");
             console.log(error);
         }
     });
@@ -85,10 +87,10 @@ function processSteps(name, user_id, periods, cb) {
         });
     }, function(err) {
         if( err ) {
-            console.log('Some steps failed to process');
+            console.log('Some fitbit steps failed to process');
         } else {
             cb();
-            console.log('All steps processed successfully');
+            console.log('All fitbit steps processed successfully');
         }
     });
 }
@@ -126,10 +128,10 @@ function processMass(name, user_id, periods, cb) {
 
     }, function(err) {
         if( err ) {
-            console.log('Some mass values failed to process');
+            console.log('Some fitbit mass values failed to process');
         } else {
             cb();
-            console.log('All masses processed successfully');
+            console.log('All fitbit masses processed successfully');
         }
     });
 }
@@ -140,6 +142,7 @@ exports.processData = function(user, cb) {
     var access_token = user.doc.access_token;
     var isSteps = user.doc.steps;
     var isMass = user.doc.weight;
+    console.log("Name: " + name);
 
     async.parallel([
         function(callback) {

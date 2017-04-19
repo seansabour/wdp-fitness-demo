@@ -1,0 +1,5 @@
+applications:
+- name: FitData
+  command: node app.js
+  random-route: true
+  memory: 128M

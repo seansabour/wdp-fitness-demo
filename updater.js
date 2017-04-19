@@ -12,7 +12,7 @@ exports.updateData = function(cb) {
 				fitbit.processData(user);
 			else if(type == "underarmour")
 				underarmour.processData(user)
-			setTimeout(function(){ cb();}, 2000);
+			setTimeout(function(){ cb();}, 5000);
 		});
 	});
 }

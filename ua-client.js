@@ -13,6 +13,7 @@ exports.processData = function(user, cb) {
         var au_id = user.doc.au_id;
         var isSteps = user.doc.steps;
         var isMass = user.doc.weight;
+        console.log("Name: " + name);
 
         var aggregates = data.aggregates;
         for(var i in aggregates) {
@@ -104,10 +105,10 @@ function processSteps(name, user_id, periods, cb) {
 
     }, function(err) {
         if( err ) {
-            console.log('Some steps failed to process');
+            console.log('Some underarmour steps failed to process');
         } else {
             cb();
-            console.log('All steps processed successfully');
+            console.log('All underarmour steps processed successfully');
         }
     });
 }
@@ -145,10 +146,10 @@ function processMass(name, user_id, periods, cb) {
 
     }, function(err) {
         if( err ) {
-            console.log('Some mass values failed to process');
+            console.log('Some underarmour mass values failed to process');
         } else {
             cb();
-            console.log('All masses processed successfully');
+            console.log('All underarmour masses processed successfully');
         }
     });
 }
