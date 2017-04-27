@@ -111,15 +111,16 @@ function processMass(name, user_id, periods, cb) {
         }
         userdb.getMass(id, function(obj_mass) {
             if(obj_mass != null) {
-                var old_mass = obj_mass.body_mass;
-                var new_mass = activity.body_mass;
+                var old_mass = parseFloat(new Buffer(obj_mass.body_mass, 'base64').toString('ascii'));
+                var new_mass = parseFloat(new Buffer(activity.body_mass, 'base64').toString('ascii'));
                 if(new_mass != old_mass) {
-                    obj_mass.body_mass = new_mass;
+                    obj_mass.body_mass = new Buffer(new_mass.toString()).toString('base64');
                     userdb.insertMass(obj_mass, function() {
                         callback();
                     });
                 }
             } else {
+                activity.body_mass = new Buffer(activity.body_mass.toString()).toString('base64');
                 userdb.insertMass(activity, function() {
                     callback();
                 });
