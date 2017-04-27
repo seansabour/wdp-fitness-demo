@@ -17,8 +17,6 @@ function getSteps(user_id, access_token, cb) {
         url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-04-01/"+date+".json",
         headers: headers,
     };
-
-    console.log("options: " + JSON.stringify(options));
                 
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
@@ -43,9 +41,11 @@ function getMass(user_id, access_token, cb) {
         url: "https://api.fitbit.com/1/user/"+user_id+"/body/log/weight/date/2017-04-01/"+date+".json",
         headers: headers,
     };
+    console.log("options" + JSON.stringify(options));
 
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
+            var body = JSON.parse(body);
             cb(body.weight);
         } else {
             console.log("Error for getting fitbit mass");
@@ -143,6 +143,7 @@ exports.processData = function(user, cb) {
     var isSteps = user.doc.steps;
     var isMass = user.doc.weight;
     console.log("Name: " + name);
+    console.log("access_token: " + access_token);
 
     async.parallel([
         function(callback) {
