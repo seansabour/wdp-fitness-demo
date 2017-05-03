@@ -53,11 +53,12 @@ function getData(user, cb) {
         qs: {
             data_types: 'steps_summary,body_mass_summary',
             period: 'P1D',
-            start_datetime: 2017 + '-' + 3 + '-' + 17,
-            end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate(),
+            start_datetime: '2017-05-03T09:00:00.000Z',
+            end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + 'T23:59:59.999Z',
             user_id: au_id
         }
     }
+    console.log("options: " + JSON.stringify(options));
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var body = JSON.parse(body);

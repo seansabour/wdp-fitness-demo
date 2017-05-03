@@ -7,16 +7,23 @@ const userdb = require("./user-db");
 
 function getSteps(user_id, access_token, cb) {
     var now = new Date();
-    var date = now.getFullYear() + '-0' + (now.getMonth() + 1) + '-' + now.getDate()
+    var month = now.getMonth() + 1;
+    var day = now.getDate();
+    if(day < 10)
+        day = "0" + day;
+    if(month < 10)
+        month = "0" + month;
+    var date = now.getFullYear() + '-' + month + '-' + day;
     var headers = {
         "Authorization": "Bearer "+ access_token
     };
 
     // Configure the request
     var options = {
-        url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-04-01/"+date+".json",
+        url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-05-03/"+date+".json",
         headers: headers,
     };
+    console.log("options" + JSON.stringify(options));
                 
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
@@ -31,14 +38,20 @@ function getSteps(user_id, access_token, cb) {
 
 function getMass(user_id, access_token, cb) {
     var now = new Date();
-    var date = now.getFullYear() + '-0' + (now.getMonth() + 1) + '-' + now.getDate()
+    var month = now.getMonth() + 1;
+    var day = now.getDate();
+    if(day < 10)
+        day = "0" + day;
+    if(month < 10)
+        month = "0" + month;
+    var date = now.getFullYear() + '-' + month + '-' + day;
     var headers = {
         "Authorization": "Bearer "+ access_token,
     };
 
     // Configure the request
     var options = {
-        url: "https://api.fitbit.com/1/user/"+user_id+"/body/log/weight/date/2017-04-01/"+date+".json",
+        url: "https://api.fitbit.com/1/user/"+user_id+"/body/log/weight/date/2017-05-03/"+date+".json",
         headers: headers,
     };
     console.log("options" + JSON.stringify(options));

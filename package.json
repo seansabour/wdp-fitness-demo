@@ -14,11 +14,7 @@
     "express-messages": "*",
     "express-session": "*",
     "express-validator": "*",
-    "passport": "*",
-    "passport-ldapauth": "*",
-    "passport-http": "*",
     "request": "*",
-    "passport-local": "*",
     "cloudant": "*",
     "async": "*",
     "sleep": "*"

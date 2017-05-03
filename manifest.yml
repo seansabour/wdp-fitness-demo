@@ -1,5 +1,5 @@
 applications:
-- name: FitData
+- name: FitDataPuller
   command: node app.js
   random-route: true
-  memory: 128M
+  memory: 300M
