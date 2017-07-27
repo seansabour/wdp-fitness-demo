@@ -7,8 +7,8 @@ var password = "2ea72dd2d4894ddda713902dc160e479b2a21809";
 var cloudant = Cloudant({account:me, key:apikey, password:password});
 
 var user_db = cloudant.db.use('fit_users')
-var fit_steps = cloudant.db.use('fit_steps');
-var fit_mass = cloudant.db.use('fit_body_mass');
+var fit_steps = cloudant.db.use('fit_steps2');
+var fit_mass = cloudant.db.use('fit_body_mass2');
 
 
 exports.getAllUsers = function(callback) {

@@ -20,11 +20,11 @@ function getSteps(user_id, access_token, cb) {
 
     // Configure the request
     var options = {
-        url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-05-03/"+date+".json",
+        url: "https://api.fitbit.com/1/user/"+user_id+"/activities/steps/date/2017-07-15/"+date+".json",
         headers: headers,
     };
     console.log("options" + JSON.stringify(options));
-                
+
     request(options, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var body = JSON.parse(body);
@@ -51,7 +51,7 @@ function getMass(user_id, access_token, cb) {
 
     // Configure the request
     var options = {
-        url: "https://api.fitbit.com/1/user/"+user_id+"/body/log/weight/date/2017-05-03/"+date+".json",
+        url: "https://api.fitbit.com/1/user/"+user_id+"/body/log/weight/date/2017-07-15/"+date+".json",
         headers: headers,
     };
     console.log("options" + JSON.stringify(options));
@@ -185,4 +185,3 @@ exports.processData = function(user, cb) {
         cb();
     });
 }
-

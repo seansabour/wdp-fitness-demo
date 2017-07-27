@@ -38,38 +38,38 @@ exports.processData = function(user, cb) {
 }
 
 function getData(user, cb) {
-    var name = user.doc.name;
-    var au_id = user.doc.au_id;
-    var now = new Date();
-    var headers = {
-        'Authorization':       'Bearer ' + user.doc.access_token,
-        'Api-Key': CLIENT_ID,
-        'Content-Type':     'application/json'
-    }
-    var options = {
-        url: 'https://api.ua.com/v7.1/aggregate/',
-        method: 'GET',
-        headers: headers,
-        qs: {
-            data_types: 'steps_summary,body_mass_summary',
-            period: 'P1D',
-            start_datetime: '2017-05-03T09:00:00.000Z',
-            end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate() + 'T23:59:59.999Z',
-            user_id: au_id
-        }
-    }
-    console.log("options: " + JSON.stringify(options));
-    request(options, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var body = JSON.parse(body);
-            var embedded = body._embedded;
-            embedded.name = name;
-            embedded.au_id = au_id;
-            cb(embedded);
-        } else {
-            cb({error: null});
-        }
-    });
+  var name = user.doc.name;
+  var au_id = user.doc.au_id;
+  var now = new Date();
+  var headers = {
+      'Authorization':       'Bearer ' + user.doc.access_token,
+      'Api-Key': CLIENT_ID,
+      'Content-Type':     'application/json'
+  }
+  var options = {
+      url: 'https://api.ua.com/v7.1/aggregate/',
+      method: 'GET',
+      headers: headers,
+      qs: {
+          data_types: 'steps_summary,body_mass_summary',
+          period: 'P1D',
+          start_datetime: '2017-07-15T09:00:00.000Z',
+          end_datetime: now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + (now.getDate() + 1) + 'T23:59:59.999Z',
+          user_id: au_id
+      }
+  }
+  console.log("UA options: " + JSON.stringify(options));
+  request(options, function (error, response, body) {
+      if (!error && response.statusCode == 200) {
+          var body = JSON.parse(body);
+          var embedded = body._embedded;
+          embedded.name = name;
+          embedded.au_id = au_id;
+          cb(embedded);
+      } else {
+          cb({error: null});
+      }
+  });
 }
 
 function processSteps(name, user_id, periods, cb) {
