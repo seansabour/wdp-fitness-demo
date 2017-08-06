@@ -1,0 +1,143 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>WDP Fitness Demo</title>
+  <meta name="description" content="WDP Fitness Demo">
+  <meta name="author" content="Sean Sabour">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <link rel="shortcut icon" type="image/png" href="/images/ibm.png"/>
+
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+ <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body class="parent">
+    <nav class="navbar navbar-default ">
+
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <span class="nav navbar-nav navbar-left">
+                    <h1><span><img src="images/ibm.png" alt="IBM logo" width="48px" height="48px"/> </span> IBM WDP Fitness Demo</h1>
+                </span>
+
+            </div>
+            <!--  TODO: REMOVE THE URL BEFORE PUSHING CODE TO GITHUB!  -->
+            <ul class="nav navbar-nav navbar-right">
+                <li><a  target="_blank" href="<YOUR_DSX_SHARED_NOTEBOOK>">Analytics with DSX</a></li>
+          </ul>
+        </div>
+    </nav>
+    <div >
+    <% if(message.length > 0) { %>
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <strong>Success!</strong> <%= message %>.
+        </div>
+    <% } else if(error.length > 0) { %>
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <strong>Error!</strong> <%= error %>.
+        </div>
+    <% } else { %>
+        <div class="alert alert-warning alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <strong>NOTE!</strong> <%= info %>
+        </div>
+    <% } %>
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="myModalLabel">WDP Fit Demo FAQ</h4>
+          </div>
+          <div class="modal-body">
+              <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="headingOne">
+                    <h4 class="panel-title">
+                      <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        What services are being used?
+                      </a>
+                    </h4>
+                  </div>
+                  <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+                    <div class="panel-body">
+                      There are several services being used in this application:
+                      <ul>
+                          <li><a href="https://console.bluemix.net/catalog/services/data-science-experience?env_id=ibm:yp:us-south&taxonomyNavigation=apps">Data Science Experience</a></li>
+                          <li><a href="https://console.bluemix.net/catalog/starters/sdk-for-nodejs?env_id=ibm:yp:us-south&taxonomyNavigation=apps">Cloud Foundry SDK for Node.js</a></li>
+                          <li><a href="https://console.bluemix.net/catalog/services/cloudant-nosql-db?env_id=ibm:yp:us-south&taxonomyNavigation=apps">Cloudant NoSQL DB</a></li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="headingTwo">
+                    <h4 class="panel-title">
+                      <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        I signed up, but my steps/weight haven't showed up yet
+                      </a>
+                    </h4>
+                  </div>
+                  <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+                    <div class="panel-body">
+                      Since FitBit's API is limited to how much data we can pull throughout the hour, we decided to pull every 30 minutes. The Data Science Experience notebook is scheduled to run hourly as-well.
+                    </div>
+                  </div>
+                </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="headingThree">
+                    <h4 class="panel-title">
+                      <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                        I no longer want to participate, how do I opt out of the challenge?
+                      </a>
+                    </h4>
+                  </div>
+                  <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+                    <div class="panel-body">
+                      User's data will be wiped daily and no more information will be collected at the end of the day.
+                    </div>
+                  </div>
+                </div>
+                <div class="panel panel-default">
+                  <div class="panel-heading" role="tab" id="headingFour">
+                    <h4 class="panel-title">
+                      <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                        How do I sign up for a bluemix account?
+                      </a>
+                    </h4>
+                  </div>
+                  <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingFour">
+                    <div class="panel-body">
+                     You can sign up here for a <a href="https://console.bluemix.net/registration/?target=%2Fdashboard%2Fapps"> free 30 day trial</a>!
+                    </div>
+                  </div>
+                </div>
+              </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid child">
+        <h3>Enroll into the WDP Fitness Demo Challenge!</h3>
+        <button type="button" class="btn btn-success btn-lg btn-block" onclick="location.href='https://www.fitbit.com/oauth2/authorize?response_type=code&client_id=228P4V&redirect_uri=https%3A%2F%2Ffit-demo-app.mybluemix.net%2Ffitbit%2Fcallback&scope=activity%20heartrate%20location%20nutrition%20profile%20settings%20sleep%20social%20weight&expires_in=604800'">Sign up!</button>
+        <!-- Button trigger modal -->
+        <button type="button" class="btn btn-primary btn-lg btn-block" data-toggle="modal" data-target="#myModal">Learn more</button>
+    </div>
+</div>
+</body>
+</html>
