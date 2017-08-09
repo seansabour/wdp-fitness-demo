@@ -75,15 +75,16 @@ app.get("/callback", async (req,res) => {
                 token_type:token_type_var,
                 scope: scope_var,
                 refresh_token: refresh_token,
+                registered_on: new Date()
             });
         }
         // Redirect to index page.
         if(!results.ok) {
             logger.log("error",`Error adding user to database: ${JSON.stringify(results,null,4)}`);
-            res.redirect("/?error=Sorry, there seems to be an error. Please try again later.");
+            res.redirect("/");
         } else {
             logger.log("info","Registered new user into database.");
-            res.redirect("/?message=You are now registered into the challenge.");
+            res.redirect("/registered");
         }
 
     } catch(err) {

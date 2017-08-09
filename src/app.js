@@ -7,6 +7,7 @@ import { logger } from "./logger";
 
 import home from "./controllers/home";
 import fitbit from "./controllers/fitbit";
+import registered from "./controllers/registered";
 
 const schedule = new Scheduler();
 let app = new express();
@@ -22,6 +23,7 @@ app.use(express.static(__dirname + "/public"));
 // Middleware routes
 app.use("/", home);
 app.use("/fitbit", fitbit);
+app.use("/registered", registered);
 
 const appEnv = cfenv.getAppEnv();
 const PORT = appEnv.port || 3000;
