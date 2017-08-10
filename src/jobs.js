@@ -2,6 +2,7 @@ import Cloudant from "./cloudant.js";
 import Fitbit from "./fitbit";
 import { logger } from "./logger";
 import request from "request-promise";
+import pThrottle from "p-throttle";
 
 const db = new Cloudant();
 const fb = new Fitbit();
@@ -68,4 +69,65 @@ export async function refreshTokens(){
             logger.log("error", `Error refreshing tokens for user ${JSON.stringify(err,null,4)}`);
         }
     });
+}
+
+/**
+ * Process that refresh's user's access_token every 8 hours (https://dev.fitbit.com/docs/oauth2/#refreshing-tokens)
+ * @returns {void}
+ */
+export async function deleteUsersData() {
+    let users = await db.getAllUsers();
+    const DELETE_DATE = new Date("2017-08-10T00:00:00Z").toISOString();
+    logger.log("info",`Eliminating any data that is registered after ${DELETE_DATE}...`);
+
+    try {
+        // Cloudant lite has a low queries/sec limit, so we must limit the queries to cloudant to 1 per 2 second.
+        const throttleSteps = pThrottle(doc => {
+            let steps = db.deleteSteps(doc);
+            return Promise.resolve(steps);
+        }, 1, 2000);
+
+        const throttleWeight = pThrottle(doc => {
+            let weight = db.deleteMass(doc);
+            return Promise.resolve(weight);
+        }, 1, 2000);
+
+        users.forEach(async (user) => {
+            user = user.doc;
+
+            // Skip the design docs.
+            if(user["_id"].includes("_design")){
+                return;
+            }
+
+            if(user.registered_on.split("T")[0] > DELETE_DATE){
+                // Revoke access and delete all steps and weight for that particular user.
+                let query = { "selector": { "fitbit_id": user.fitbit_id } };
+                let steps = await db.getSteps(query);
+                let weight = await db.getMass(query);
+
+                // Throttle Deletes all step documents in throttle
+                for(let doc of steps){
+                    // Throttle requests
+                    throttleSteps(doc);
+                }
+
+                // Throttle Deletes all body_mass documents
+                for(let doc of weight){
+                    // Throttle requests
+                    throttleWeight(doc);
+                }
+
+                //db.deleteWeight(weight);
+
+                // Delete user doc and revoke access from fitbit
+                fb.revokeAccess(user);
+
+                // Delete user from database.
+                db.deleteUser(user);
+            }
+        });
+    } catch(err) {
+        logger.log("error",`There was an error: ${ JSON.stringify(err,null,4) }`);
+    }
 }

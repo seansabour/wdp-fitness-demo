@@ -4,6 +4,10 @@ import { logger } from "./logger";
 import pThrottle from "p-throttle";
 
 const db = new Cloudant();
+const FITBIT_CLIENT_ID = process.env.FITBIT_CLIENT_ID;
+const FITBIT_CLIENT_SECRET = process.env.FITBIT_CLIENT_SECRET;
+const FITBIT_CLIENT_SECRET_64 = new Buffer(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_SECRET}`).toString("base64");
+
 /**
  * Represents a FitBit
  */
@@ -17,12 +21,13 @@ export default class FitBit {
      */
     async getSteps(user_id, access_token) {
         let now = new Date();
-        let date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
+        let start_date = new Date(new Date().setDate(now.getDate()-30)).toISOString().split("T")[0];
+        let end_date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
 
         try {
             let results = await request({
-                // TODO: Subtract 31 days from today's date and replace 2017-07-15, FitBit has a 31 day limit.
-                url: `https://api.fitbit.com/1/user/${user_id}/activities/steps/date/2017-07-15/${date}.json`,
+                // Fitbit only allows you to pull 31 days of data.
+                url: `https://api.fitbit.com/1/user/${user_id}/activities/steps/date/${start_date}/${end_date}.json`,
                 headers: {
                     "Authorization": `Bearer  ${access_token}`
                 },
@@ -45,12 +50,13 @@ export default class FitBit {
      */
     async getMass(fitbit_id, access_token) {
         let now = new Date();
-        let date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
+        let start_date = new Date(new Date().setDate(now.getDate()-30)).toISOString().split("T")[0];
+        let end_date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
 
         try {
             let results = await request({
-                // TODO: Subtract 31 days from today's date and replace 2017-07-15, FitBit has a 31 day limit.
-                url: `https://api.fitbit.com/1/user/${fitbit_id}/body/log/weight/date/2017-07-15/${date}.json`,
+                // Fitbit only allows you to pull 31 days of data.
+                url: `https://api.fitbit.com/1/user/${fitbit_id}/body/log/weight/date/${start_date}/${end_date}.json`,
                 headers: {
                     "Authorization": `Bearer  ${access_token}`
                 },
@@ -63,6 +69,26 @@ export default class FitBit {
             }
         } catch(err) {
             logger.log("error",`Error occured getting mass from fitbit api: ${JSON.stringify(err,null,4)}`);
+        }
+    }
+
+    /**
+     * Get user's steps for the day.
+     * @param {Object} user The user which needs to be revoked.
+     * @returns {void}
+     */
+    async revokeAccess(user) {
+        try {
+            let results = await request({
+                url: "https://api.fitbit.com/oauth2/revoke",
+                headers: {
+                    "Authorization": `Basic ${FITBIT_CLIENT_SECRET_64}`
+                },
+                qs: { "token": user.access_token }
+            });
+            logger.log("debug", `Revoking user's access response ==> ${ JSON.stringify(results,null,4) }`);
+        } catch(err) {
+            logger.log("error",`Error occured revoking access from fitbit api: ${JSON.stringify(err,null,4)}`);
         }
     }
 

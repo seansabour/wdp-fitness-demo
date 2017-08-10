@@ -62,6 +62,22 @@ export default class Cloudant {
     }
 
     /**
+     * Retrieves a user from the database.
+     * @param {Object} user A user that you want to delete from user's db
+     * @returns {Object} Response from cloudant.
+     */
+    deleteUser(user) {
+        return new Promise((resolve,reject) => {
+            this.user_db.destroy(user["_id"], user["_rev"], (err, data) => {
+                if(err) reject(err);
+
+                resolve(data);
+            });
+        });
+    }
+
+
+    /**
      * Insert steps into db.
      * @param {Object} doc A formatted doc for cloudant to insert steps for a given user
      * @returns {Object} Response from cloudant.
@@ -75,6 +91,22 @@ export default class Cloudant {
             });
         });
     }
+
+    /**
+     * Delete steps from steps db.
+     * @param {Object} doc A formatted doc for cloudant to insert steps for a given user
+     * @returns {Object} Response from cloudant.
+     */
+    deleteSteps(doc) {
+        return new Promise((resolve,reject) => {
+            this.steps_db.destroy(doc["_id"], doc["_rev"], (err, data) => {
+                if(err) reject(err);
+
+                resolve(data);
+            });
+        });
+    }
+
     /**
      * Insert steps in bulk into db.
      * @param {Array} docs An array of formatted doc for cloudant to insert steps for a given user
@@ -146,6 +178,21 @@ export default class Cloudant {
                 if(err) reject(err);
 
                 data = (data ? data.docs : []);
+                resolve(data);
+            });
+        });
+    }
+
+    /**
+     * Delete weight doc from database
+     * @param {Object} doc A formatted doc for cloudant to insert steps for a given user
+     * @returns {Object} Response from cloudant.
+     */
+    deleteMass(doc) {
+        return new Promise((resolve,reject) => {
+            this.mass_db.destroy(doc["_id"], doc["_rev"], (err, data) => {
+                if(err) reject(err);
+
                 resolve(data);
             });
         });
