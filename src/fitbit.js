@@ -192,11 +192,11 @@ export default class FitBit {
         try {
             let steps_periods = await this.getSteps(fitbit_id, access_token);
 
-            logger.log("info","Processing steps to see if any updates need to happen..");
+            // Processing steps to see if any updates need to happen..
             await this.processSteps(name, fitbit_id, steps_periods);
 
             let weight_periods = await this.getMass(fitbit_id, access_token);
-            logger.log("info","Processing body mass to see if any updates need to happen");
+            // Processing body mass to see if any updates need to happen
             await this.processMass(name, fitbit_id, weight_periods);
 
         } catch(err) {

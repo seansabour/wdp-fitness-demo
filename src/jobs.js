@@ -14,6 +14,7 @@ const FITBIT_CLIENT_SECRET_64 = new Buffer(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_
  * @returns {void}
  */
 export function updateData() {
+    logger.log("info","Pulling data to see if there are any changes since the last pull.");
     db.getAllUsers()
         .then((users) => {
             users.forEach((user) => {
