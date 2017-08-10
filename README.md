@@ -1,5 +1,5 @@
 ### Overview
-This project walks you through how you can use the Watson Data Platform to ingest data from a 3rd party source, like FitBit, and store it into Cloudant and then use the Data Science Experience to transform/analyze your datasets. Here is a sample of the [Data Science Experience Notebook](https://apsportal.ibm.com/analytics/notebooks/14971e0a-252a-4208-98dd-fe6576b0e505?projectid=c3c1d5c5-c74c-4ccf-9e14-300213b233b0&context=analytics)
+This project walks you through how you can use the Watson Data Platform to build a solution that ingests data from a 3rd party source, like FitBit, and stores it into Cloudant and then use the Data Science Experience to transform/analyze your datasets. Here is a sample of the [Data Science Experience Notebook](https://apsportal.ibm.com/analytics/notebooks/14971e0a-252a-4208-98dd-fe6576b0e505?projectid=c3c1d5c5-c74c-4ccf-9e14-300213b233b0&context=analytics)
 
 ### Pre-requisites
 1.	Create a [Bluemix trial account](https://developer.ibm.com/sso/bmregistration?lang=en_US&ca=dw-_-apiconnect-_-1-_-course)
