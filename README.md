@@ -14,7 +14,8 @@ This project walks you through how you can use the Watson Data Platform to build
 2. Set the credentials in your `.env` file, you can use the `.env.example` file as a template.
 3. Open the `src/public/partials/dashboard-btn.ejs` and find the replace the `<YOUR_DSX_SHAREDNOTEBOOK_URL_HERE>` with your DSX shared notebook URL
 4. Open the `src/public/index.ejs` and replace the `<YOUR_FITBIT_API_REGISTRATION_URL>` with your FitBit registration URL
-5. Push your application to bluemix using the CF CLI `cf push -f manifest.yml`
+5. Update the `manifest.yml` file to include your Node.js app name in Bluemix
+6. Push your application to bluemix using the CF CLI `cf push -f manifest.yml`
 
 ***NOTE: You might be charged for provisioning the applications to Bluemix, please view the pricing plans and make sure you understand the charges.***
 
