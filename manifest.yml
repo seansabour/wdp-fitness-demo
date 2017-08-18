@@ -1,5 +1,5 @@
 applications:
-- name: fit-demo-app
+- name: <YOUR_APPLICATION_NAME_HERE>
   command: node server.js
   random-route: false
   memory: 300M
