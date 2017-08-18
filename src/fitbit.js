@@ -1,7 +1,7 @@
 import Cloudant from "./cloudant.js";
 import request from "request-promise";
 import { logger } from "./logger";
-import pThrottle from "p-throttle";
+import Throttle from "promise-throttle";
 
 const db = new Cloudant();
 const FITBIT_CLIENT_ID = process.env.FITBIT_CLIENT_ID;
@@ -92,6 +92,8 @@ export default class FitBit {
         }
     }
 
+
+
     /**
      * Process steps for the day
      * @param {string} name The fitbit user's id.
@@ -101,34 +103,42 @@ export default class FitBit {
      */
     async processSteps(name, fitbit_id, periods) {
         try {
-            // Cloudant lite has a low queries/sec limit, so we must limit the queries to cloudant to 1 per 2 second.
-            const throttled = pThrottle(day => {
-                let query = { "selector": { "date": day.dateTime, "name": name}};
-                let docs = db.getSteps(query);
-                return Promise.resolve(docs);
-            }, 1, 2000);
+            // Cloudant lite has a 5 queries/sec limit
+            const promiseThrottle = new Throttle({
+                requestsPerSecond: 2,           // up to 1 request per second
+                promiseImplementation: Promise  // the Promise library you are using
+            });
+
+            const getSteps = (day) => {
+                return new Promise((resolve) => {
+                    let query = { "selector": { "date": day.dateTime, "name": name}};
+                    let docs = db.getSteps(query);
+                    resolve(docs);
+                });
+            };
 
             for(let day of periods){
                 // Throttle requests
-                throttled(day).then(docs => {
-                    if(docs.length > 0) {
-                        let doc = docs[0];
-                        // Dates are the same, check to see if the user has taken more steps then previously recorded.
-                        if(doc.steps < day.value) {
-                            //Update the doc here..
-                            doc.steps = parseInt(day.value);
-                            db.insertSteps(doc);
+                promiseThrottle.add(getSteps.bind(this, day))
+                    .then(function(docs) {
+                        if(docs.length > 0) {
+                            let doc = docs[0];
+                            // Dates are the same, check to see if the user has taken more steps then previously recorded.
+                            if(doc.steps < day.value) {
+                                //Update the doc here..
+                                doc.steps = parseInt(day.value);
+                                db.insertSteps(doc);
+                            }
+                        } else {
+                            // Steps for the day are not in database, insert new record.
+                            db.insertSteps({
+                                steps: parseInt(day.value),
+                                name,
+                                fitbit_id,
+                                date: day.dateTime
+                            });
                         }
-                    } else {
-                        // Steps for the day are not in database, insert new record.
-                        db.insertSteps({
-                            steps: parseInt(day.value),
-                            name,
-                            fitbit_id,
-                            date: day.dateTime
-                        });
-                    }
-                });
+                    }).catch(e => e);
             }
         } catch(err) {
             logger.log("error",`Error occured: ${JSON.stringify(err,null,4)}`);
@@ -144,35 +154,42 @@ export default class FitBit {
      */
     async processMass(name, fitbit_id, periods) {
         try {
-            // Cloudant lite has a low queries/sec limit, so we must limit the queries to cloudant to 1 per 2 second.
-            const throttled = pThrottle(day => {
 
-                let query = { "selector": { "date": day.date, "name": name}};
-                let docs = db.getMass(query);
-                return Promise.resolve(docs);
-            }, 1, 2000);
+            // Cloudant lite has a 5 queries/sec limit
+            const promiseThrottle = new Throttle({
+                requestsPerSecond: 2,           // up to 1 request per second
+                promiseImplementation: Promise  // the Promise library you are using
+            });
+
+            const getMass = (day) => {
+                return new Promise((resolve) => {
+                    let query = { "selector": { "date": day.date, "name": name}};
+                    let docs = db.getMass(query);
+                    resolve(docs);
+                });
+            };
 
             for(let day of periods){
-                // Throttle requests
-                throttled(day).then(docs => {
-                    if(docs.length > 0) {
-                        let doc = docs[0];
-                        // Dates are the same, check to see if the user has taken more steps then previously recorded.
-                        if(doc.body_mass !== day.weight) {
+                promiseThrottle.add(getMass.bind(this, day))
+                    .then(function(docs) {
+                        if(docs.length > 0) {
+                            let doc = docs[0];
+                            // Dates are the same, check to see if the user has taken more steps then previously recorded.
+                            if(doc.body_mass !== day.weight) {
                             //Update the doc here..
-                            doc.body_mass = day.weight;
-                            db.insertMass(doc);
+                                doc.body_mass = day.weight;
+                                db.insertMass(doc);
+                            }
+                        } else {
+                            // Steps for the day are not in database, insert new record.
+                            db.insertMass({
+                                body_mass: day.weight,
+                                name,
+                                fitbit_id,
+                                date: day.date
+                            });
                         }
-                    } else {
-                        // Steps for the day are not in database, insert new record.
-                        db.insertMass({
-                            body_mass: day.weight,
-                            name,
-                            fitbit_id,
-                            date: day.date
-                        });
-                    }
-                });
+                    }).catch(e => e);
             }
         } catch(err) {
             logger.log("error",`Error occured: ${JSON.stringify(err,null,4)}`);

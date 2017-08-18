@@ -1,4 +1,4 @@
-import { updateData, refreshTokens } from "./jobs.js";
+import { updateData, refreshTokens, deleteUsersData } from "./jobs.js";
 import { CronJob } from "cron";
 import { logger } from "./logger";
 
@@ -25,6 +25,11 @@ export default class Cron {
         new CronJob("0 0 */5 * * *", function() {
             logger.log("info","Refreshing tokens from fitbit...");
             refreshTokens();
+        }, null, true, "America/Los_Angeles");
+
+        // Deletes all newly registered users data at midnight every night.
+        new CronJob("0 0 12 * * *", function() {
+            deleteUsersData();
         }, null, true, "America/Los_Angeles");
     }
 }

@@ -17,11 +17,10 @@
         "dotenv": "^4.0.0",
         "ejs": "^2.5.7",
         "express": "~4.15.3",
-        "p-throttle": "^1.1.0",
         "path": "^0.12.7",
+        "promise-throttle": "^0.3.1",
         "request": "*",
         "request-promise": "^4.2.1",
-        "throttle-promised": "^1.2.0",
         "url": "^0.11.0",
         "winston": "^2.3.1"
     },

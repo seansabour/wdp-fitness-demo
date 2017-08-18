@@ -2,7 +2,7 @@ import Cloudant from "./cloudant.js";
 import Fitbit from "./fitbit";
 import { logger } from "./logger";
 import request from "request-promise";
-import pThrottle from "p-throttle";
+import Throttle from "promise-throttle";
 
 const db = new Cloudant();
 const fb = new Fitbit();
@@ -82,16 +82,27 @@ export async function deleteUsersData() {
     logger.log("info",`Eliminating any data that is registered after ${DELETE_DATE}...`);
 
     try {
-        // Cloudant lite has a low queries/sec limit, so we must limit the queries to cloudant to 1 per 2 second.
-        const throttleSteps = pThrottle(doc => {
-            let steps = db.deleteSteps(doc);
-            return Promise.resolve(steps);
-        }, 1, 2000);
 
-        const throttleWeight = pThrottle(doc => {
-            let weight = db.deleteMass(doc);
-            return Promise.resolve(weight);
-        }, 1, 2000);
+        // Cloudant lite has a 5 queries/sec limit
+        const promiseThrottle = new Throttle({
+            requestsPerSecond: 2,           // up to 1 request per second
+            promiseImplementation: Promise  // the Promise library you are using
+        });
+
+        const deleteSteps = (doc) => {
+            return new Promise((resolve) => {
+                let steps = db.deleteSteps(doc);
+                resolve(steps);
+            });
+        };
+
+        const deleteMass = (doc) => {
+            return new Promise((resolve) => {
+                let weight = db.deleteMass(doc);
+                resolve(weight);
+            });
+        };
+
 
         users.forEach(async (user) => {
             user = user.doc;
@@ -110,16 +121,14 @@ export async function deleteUsersData() {
                 // Throttle Deletes all step documents in throttle
                 for(let doc of steps){
                     // Throttle requests
-                    throttleSteps(doc);
+                    promiseThrottle.add(deleteSteps.bind(this, doc)).catch(e => e);
                 }
 
                 // Throttle Deletes all body_mass documents
                 for(let doc of weight){
                     // Throttle requests
-                    throttleWeight(doc);
+                    promiseThrottle.add(deleteMass.bind(this, doc)).catch(e => e);
                 }
-
-                //db.deleteWeight(weight);
 
                 // Delete user doc and revoke access from fitbit
                 fb.revokeAccess(user);
