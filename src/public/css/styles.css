@@ -1,5 +1,16 @@
 .parent {
+  background-image: url('../images/bg2.jpg');
   position: relative;
+  opacity: .9;
+  width: 100%;
+  min-height: auto;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  background-size: cover;
+  -o-background-size: cover;
+  background-position: center;
+  text-align: center;
+  color: white;
 }
 
 .child {
@@ -15,4 +26,20 @@ body{
     height: 100vh;
     width: 100vw;
     margin: 0;
+}
+
+.navbar .container-fluid {
+    background-color: black !important;
+}
+
+.learnBtn {
+    background-color: #ee7300 !important;
+}
+
+.signBtn {
+    background-color: #EE5B00 !important;
+}
+
+.panel {
+    color: black !important;
 }

@@ -1,12 +1,12 @@
 import Cloudant from "./cloudant.js";
 import request from "request-promise";
 import { logger } from "./logger";
-import Throttle from "promise-throttle";
 
 const db = new Cloudant();
 const FITBIT_CLIENT_ID = process.env.FITBIT_CLIENT_ID;
 const FITBIT_CLIENT_SECRET = process.env.FITBIT_CLIENT_SECRET;
 const FITBIT_CLIENT_SECRET_64 = new Buffer(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_SECRET}`).toString("base64");
+
 
 /**
  * Represents a FitBit
@@ -17,17 +17,14 @@ export default class FitBit {
      * Get user's steps for the day.
      * @param {string} user_id The fitbit user's id.
      * @param {string} access_token The fitbit user's access_token.
+     * @param {string} day The day that you want data for
      * @returns {Object} The daily steps for the requested user.
      */
-    async getSteps(user_id, access_token) {
-        let now = new Date();
-        let start_date = new Date(new Date().setDate(now.getDate()-30)).toISOString().split("T")[0];
-        let end_date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
+    async getSteps(user_id, access_token, day) {
 
         try {
             let results = await request({
-                // Fitbit only allows you to pull 31 days of data.
-                url: `https://api.fitbit.com/1/user/${user_id}/activities/steps/date/${start_date}/${end_date}.json`,
+                url: `https://api.fitbit.com/1/user/${user_id}/activities/steps/date/${day}/${day}.json`,
                 headers: {
                     "Authorization": `Bearer  ${access_token}`
                 },
@@ -46,31 +43,28 @@ export default class FitBit {
      * Get user's steps for the day.
      * @param {string} fitbit_id The fitbit user's id.
      * @param {string} access_token The fitbit user's access_token.
+     * @param {string} day The day that you want data for
      * @returns {Object} The daily body_mass for the requested user.
      */
-    async getMass(fitbit_id, access_token) {
-        let now = new Date();
-        let start_date = new Date(new Date().setDate(now.getDate()-30)).toISOString().split("T")[0];
-        let end_date = `${ now.getFullYear() }-${ ("0" + (now.getMonth()+1) ).slice(-2) }-${ ("0" + now.getDate()).slice(-2) }`;
-
+    async getMass(fitbit_id, access_token, day) {
         try {
             let results = await request({
-                // Fitbit only allows you to pull 31 days of data.
-                url: `https://api.fitbit.com/1/user/${fitbit_id}/body/log/weight/date/${start_date}/${end_date}.json`,
+                url: `https://api.fitbit.com/1/user/${fitbit_id}/body/log/weight/date/${day}/${day}.json`,
                 headers: {
                     "Authorization": `Bearer  ${access_token}`
                 },
             });
-
             if(results) {
                 results = JSON.parse(results);
                 results = (results["weight"].length > 0 ? results["weight"] : []);
+
                 return results;
             }
         } catch(err) {
             logger.log("error",`Error occured getting mass from fitbit api: ${JSON.stringify(err,null,4)}`);
         }
     }
+
 
     /**
      * Get user's steps for the day.
@@ -92,132 +86,65 @@ export default class FitBit {
         }
     }
 
+    /**
+     * Process weight for the day
+     * @param {string} task A notification that a user's weight has changed.
+     * @param {function} cb A callback for when the task is done
+     * @returns {void}
+     */
+    async processMass(task, cb) {
+        let user = await db.getUser({ "selector" : { "fitbit_id": task.ownerId } });
+        user = user.docs[0];
+        let user_mass = await this.getMass(task.ownerId, user.access_token, task.date);
+        user_mass = user_mass[0];
 
+        // Check to see if weight exists for that day.
+        let massExists = await db.getMass({ "selector": { "fitbit_id": task.ownerId, "date": task.date} });
+        if (massExists.length > 0) {
+            massExists = massExists[0];
+            if(massExists["body_mass"] != user_mass.weight) {
+                massExists["body_mass"] = user_mass.weight;
+                await db.insertMass(massExists);
+            }
+        } else {
+            await db.insertMass({
+                body_mass: user_mass.weight,
+                name: user.name,
+                fitbit_id: task.ownerId,
+                date: task.date
+            });
+        }
+        return cb();
+    }
 
     /**
      * Process steps for the day
-     * @param {string} name The fitbit user's id.
-     * @param {string} fitbit_id The fitbit user's id.
-     * @param {Array} periods The fitbit user's daily steps since begining of the pull.
+     * @param {string} task A notification that a user's steps has changed.
+     * @param {function} cb A callback for when the task is done
      * @returns {void}
      */
-    async processSteps(name, fitbit_id, periods) {
-        try {
-            // Cloudant lite has a 5 queries/sec limit
-            const promiseThrottle = new Throttle({
-                requestsPerSecond: 2,           // up to 1 request per second
-                promiseImplementation: Promise  // the Promise library you are using
-            });
+    async processSteps(task, cb) {
+        let user = await db.getUser({ "selector" : { "fitbit_id": task.ownerId } });
+        user = user.docs[0];
+        let user_steps = await this.getSteps(task.ownerId, user.access_token, task.date);
+        user_steps = user_steps[0];
 
-            const getSteps = (day) => {
-                return new Promise((resolve) => {
-                    let query = { "selector": { "date": day.dateTime, "name": name}};
-                    let docs = db.getSteps(query);
-                    resolve(docs);
-                });
-            };
-
-            for(let day of periods){
-                // Throttle requests
-                promiseThrottle.add(getSteps.bind(this, day))
-                    .then(function(docs) {
-                        if(docs.length > 0) {
-                            let doc = docs[0];
-                            // Dates are the same, check to see if the user has taken more steps then previously recorded.
-                            if(doc.steps < day.value) {
-                                //Update the doc here..
-                                doc.steps = parseInt(day.value);
-                                db.insertSteps(doc);
-                            }
-                        } else {
-                            // Steps for the day are not in database, insert new record.
-                            db.insertSteps({
-                                steps: parseInt(day.value),
-                                name,
-                                fitbit_id,
-                                date: day.dateTime
-                            });
-                        }
-                    }).catch(e => e);
+        // Check to see if steps exist for that day.
+        let stepsExists = await db.getSteps({ "selector": { "fitbit_id": task.ownerId, "date": task.date} });
+        if (stepsExists.length > 0) {
+            stepsExists = stepsExists[0];
+            if(stepsExists["steps"] != user_steps.value) {
+                stepsExists["steps"] = user_steps.value;
+                await db.insertSteps(stepsExists);
             }
-        } catch(err) {
-            logger.log("error",`Error occured: ${JSON.stringify(err,null,4)}`);
-        }
-    }
-
-    /**
-     * Process weight for the day
-     * @param {string} name The fitbit user's id.
-     * @param {string} fitbit_id The fitbit user's id.
-     * @param {Array} periods The fitbit user's daily weight since begining of the pull.
-     * @returns {void}
-     */
-    async processMass(name, fitbit_id, periods) {
-        try {
-
-            // Cloudant lite has a 5 queries/sec limit
-            const promiseThrottle = new Throttle({
-                requestsPerSecond: 2,           // up to 1 request per second
-                promiseImplementation: Promise  // the Promise library you are using
+        } else {
+            await db.insertSteps({
+                steps: user_steps.value,
+                name:  user.name,
+                fitbit_id: task.ownerId,
+                date: task.date
             });
-
-            const getMass = (day) => {
-                return new Promise((resolve) => {
-                    let query = { "selector": { "date": day.date, "name": name}};
-                    let docs = db.getMass(query);
-                    resolve(docs);
-                });
-            };
-
-            for(let day of periods){
-                promiseThrottle.add(getMass.bind(this, day))
-                    .then(function(docs) {
-                        if(docs.length > 0) {
-                            let doc = docs[0];
-                            // Dates are the same, check to see if the user has taken more steps then previously recorded.
-                            if(doc.body_mass !== day.weight) {
-                            //Update the doc here..
-                                doc.body_mass = day.weight;
-                                db.insertMass(doc);
-                            }
-                        } else {
-                            // Steps for the day are not in database, insert new record.
-                            db.insertMass({
-                                body_mass: day.weight,
-                                name,
-                                fitbit_id,
-                                date: day.date
-                            });
-                        }
-                    }).catch(e => e);
-            }
-        } catch(err) {
-            logger.log("error",`Error occured: ${JSON.stringify(err,null,4)}`);
         }
-    }
-
-    /**
-     * Process data for a given user
-     * @param {Object} user The fitbit user's cloudant doc
-     * @returns {void}
-     */
-    async processData(user) {
-        let name = user.doc.name;
-        let fitbit_id = user.doc.fitbit_id;
-        let access_token = user.doc.access_token;
-        // console.log(`getting steps... name: ${name} - fit id ${fitbit_id} -- access_token ${access_token}`);
-        try {
-            let steps_periods = await this.getSteps(fitbit_id, access_token);
-
-            // Processing steps to see if any updates need to happen..
-            await this.processSteps(name, fitbit_id, steps_periods);
-
-            let weight_periods = await this.getMass(fitbit_id, access_token);
-            // Processing body mass to see if any updates need to happen
-            await this.processMass(name, fitbit_id, weight_periods);
-
-        } catch(err) {
-            logger.log("error",`Error happened with processing data: ${JSON.stringify(err,null,4)}`);
-        }
+        return cb();
     }
 }

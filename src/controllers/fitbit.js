@@ -2,16 +2,32 @@ import { Router } from "express";
 import url from "url";
 import request from "request-promise";
 import cfenv from "cfenv";
+import async from "async";
 import Cloudant from "../cloudant.js";
 import { logger } from "../logger";
+import FitBit from "../fitbit";
 
-let app = new Router();
+const fb = new FitBit();
 const db = new Cloudant();
+const app = new Router();
+
+
 const appEnv = cfenv.getAppEnv();
 const FITBIT_CLIENT_ID = process.env.FITBIT_CLIENT_ID;
 const FITBIT_CLIENT_SECRET = process.env.FITBIT_CLIENT_SECRET;
 const FITBIT_CLIENT_SECRET_64 = new Buffer(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_SECRET}`).toString("base64");
 const FITBIT_CB_ENDPOINT = `${appEnv.url}/fitbit/callback`;
+const VERIFICATION_CODE = process.env.FITBIT_VERIFICATION_CODE;
+
+const queue = async.queue(function(task, cb) {
+    if( task.collectionType == "body") {
+        fb.processMass(task, cb);
+    } else if (task.collectionType == "activities") {
+        fb.processSteps(task,cb);
+    } else{
+        cb();
+    }
+}, 2);
 
 app.get("/callback", async (req,res) => {
     // Parse URL for authorization code.
@@ -48,6 +64,25 @@ app.get("/callback", async (req,res) => {
             }
         });
         profile_request = JSON.parse(profile_request);
+
+
+        // Add steps subscription for the user to notify us when steps changes.
+        await request({
+            uri: `https://api.fitbit.com/1/user/-/activities/apiSubscriptions/${fitbit_id}.json`,
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${access_token}`
+            }
+        });
+
+        // Add weight subscription for the user to notify us when weight changes.
+        await request({
+            uri: `https://api.fitbit.com/1/user/-/body/apiSubscriptions/${fitbit_id}.json`,
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${access_token}`
+            }
+        });
 
         // Check user to see if they exist, if so update info.
         let user_exist = await db.getUser({
@@ -92,4 +127,29 @@ app.get("/callback", async (req,res) => {
     }
 });
 
+app.route("/notify")
+    // Subscription verification endpoint
+    .get((req,res) => {
+        let code = req.query.verify || "";
+        logger.info(JSON.stringify(req.body));
+        if (code == VERIFICATION_CODE && code != "") {
+            res.sendStatus(204);
+        } else if (code != VERIFICATION_CODE && code != "") {
+            res.sendStatus(404);
+        }
+    })
+    // Handles the actual notifications.
+    .post((req, res) => {
+        let notifications = req.body;
+
+        // Fitbit subscription expects a 204 response within 3 seconds.
+        res.sendStatus(204);
+
+        // Push notifications to a queue to be handled.
+        queue.push(notifications, (err) => {
+            if (err) logger.log("error",`There was an error pushing to the queue: ${JSON.stringify(err, "", 4)}`);
+            logger.log("debug","Finished processing task...");
+        });
+
+    });
 export default app;

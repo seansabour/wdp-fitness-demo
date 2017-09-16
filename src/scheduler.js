@@ -1,4 +1,4 @@
-import { updateData, refreshTokens, deleteUsersData } from "./jobs.js";
+import { refreshTokens, deleteUsersData } from "./jobs.js";
 import { CronJob } from "cron";
 import { logger } from "./logger";
 
@@ -15,12 +15,8 @@ export default class Cron {
         logger.log("info","Refreshing tokens from fitbit...");
         refreshTokens();
 
-        // Update all user's steps and weight every 30 minutes.
-        new CronJob("0 */30 * * * *", function() {
-            logger.log("info","Pulling data from fitbit...");
-            updateData();
-        }, null, true, "America/Los_Angeles");
-
+        // For the scope of this blog, we will refresh every 8 hours, a better approach for scale would be to refresh only
+        // when the token is expired.
         // Refresh fitbit access_token/refresh_token for all users every 5 hours.
         new CronJob("0 0 */5 * * *", function() {
             logger.log("info","Refreshing tokens from fitbit...");
