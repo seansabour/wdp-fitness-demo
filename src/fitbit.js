@@ -91,20 +91,20 @@ export default class FitBit {
                 form: {"grant_type": "refresh_token", "refresh_token": user.refresh_token}
             });
 
-
             if (refreshed_ua_token.statusCode != 200) {
                 return refreshed_ua_token;
             }
 
             // Parse response and update user's doc
-            refreshed_ua_token = JSON.parse(refreshed_ua_token);
-            user.refresh_token = refreshed_ua_token.refresh_token;
-            user.access_token = refreshed_ua_token.access_token;
+            user.refresh_token = refreshed_ua_token.data.refresh_token;
+            user.access_token = refreshed_ua_token.data.access_token;
 
             // Insert updated user doc into cloudant.
             let updated_user = await db.addUser(user);
             if(!updated_user.ok) {
                 logger.log("error","There was an issue updating a user's doc in cloudant..");
+            } else {
+                logger.log("info", `Refreshed user ${user.fitbit_id}'s access_token and refresh_token.'`);
             }
             return refreshed_ua_token;
 
@@ -120,7 +120,7 @@ export default class FitBit {
      */
     async revokeAccess(user) {
         try {
-            let subscription = await request({
+            await request({
                 url: `https://api.fitbit.com/1/user/-/apiSubscriptions/${user.fitbit_id}.json`,
                 method: "DELETE",
                 headers: {
@@ -128,7 +128,7 @@ export default class FitBit {
                 }
             });
 
-            let results = await request({
+            await request({
                 url: "https://api.fitbit.com/oauth2/revoke",
                 headers: {
                     "Authorization": `Basic ${FITBIT_CLIENT_SECRET_64}`
@@ -136,8 +136,7 @@ export default class FitBit {
                 qs: { "token": user.access_token }
             });
 
-            logger.log("info", `Subscription has been deleted ${JSON.stringify(subscription, "", 4)}`);
-            logger.log("info", `Revoking user's access response ==> ${ JSON.stringify(results,null,4) }`);
+            logger.log("info", `Subscription and user's access has been deleted for user ${user.fitbit_id}`);
         } catch(err) {
             logger.log("error",`Error occured revoking access from fitbit api: ${JSON.stringify(err,null,4)}`);
         }
