@@ -2,16 +2,12 @@ import { Router } from "express";
 import url from "url";
 import request from "request-promise";
 import cfenv from "cfenv";
-import async from "async";
 import Cloudant from "../cloudant.js";
 import { logger } from "../logger";
-import FitBit from "../fitbit";
+import { queue } from "../fitbit";
 
-const fb = new FitBit();
 const db = new Cloudant();
 const app = new Router();
-
-
 const appEnv = cfenv.getAppEnv();
 const FITBIT_CLIENT_ID = process.env.FITBIT_CLIENT_ID;
 const FITBIT_CLIENT_SECRET = process.env.FITBIT_CLIENT_SECRET;
@@ -19,15 +15,6 @@ const FITBIT_CLIENT_SECRET_64 = new Buffer(`${FITBIT_CLIENT_ID}:${FITBIT_CLIENT_
 const FITBIT_CB_ENDPOINT = `${appEnv.url}/fitbit/callback`;
 const VERIFICATION_CODE = process.env.FITBIT_VERIFICATION_CODE;
 
-const queue = async.queue(function(task, cb) {
-    if( task.collectionType == "body") {
-        fb.processMass(task, cb);
-    } else if (task.collectionType == "activities") {
-        fb.processSteps(task,cb);
-    } else{
-        cb();
-    }
-}, 2);
 
 app.get("/callback", async (req,res) => {
     // Parse URL for authorization code.
@@ -73,7 +60,7 @@ app.get("/callback", async (req,res) => {
             headers: {
                 "Authorization": `Bearer ${access_token}`
             }
-        });
+        }).catch(e => e);
 
         // Add weight subscription for the user to notify us when weight changes.
         await request({
@@ -82,7 +69,7 @@ app.get("/callback", async (req,res) => {
             headers: {
                 "Authorization": `Bearer ${access_token}`
             }
-        });
+        }).catch(e => e);
 
         // Check user to see if they exist, if so update info.
         let user_exist = await db.getUser({
@@ -140,16 +127,20 @@ app.route("/notify")
     })
     // Handles the actual notifications.
     .post((req, res) => {
-        let notifications = req.body;
+        if (req.is("application/json")) {
+            let notifications = req.body;
 
-        // Fitbit subscription expects a 204 response within 3 seconds.
-        res.sendStatus(204);
+            // Fitbit subscription expects a 204 response within 3 seconds.
+            res.sendStatus(204);
 
-        // Push notifications to a queue to be handled.
-        queue.push(notifications, (err) => {
-            if (err) logger.log("error",`There was an error pushing to the queue: ${JSON.stringify(err, "", 4)}`);
-            logger.log("debug","Finished processing task...");
-        });
+            // Push notifications to a queue to be handled.
+            queue.push(notifications, (err, message) => {
+                if (err) logger.log("error",`There was an error pushing to the queue: ${JSON.stringify(err, "", 4)}`);
+                if (message) logger.log("info",message);
+            });
+        } else {
+            res.sendStatus(400);
+        }
 
     });
 export default app;

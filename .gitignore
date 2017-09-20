@@ -3,3 +3,5 @@ package-lock.json
 .editorconfig
 .env
 .DS_Store
+src/jobs.js
+src/scheduler.js
