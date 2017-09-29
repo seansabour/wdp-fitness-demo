@@ -1,6 +1,5 @@
 import express from "express";
 import bodyParser from "body-parser";
-import Scheduler from "./scheduler";
 import path from "path";
 import cfenv from "cfenv";
 import { logger } from "./logger";
@@ -9,7 +8,6 @@ import home from "./controllers/home";
 import fitbit from "./controllers/fitbit";
 import registered from "./controllers/registered";
 
-const schedule = new Scheduler();
 let app = new express();
 
 // Middleware to handle application/json and applicat/x-www-form-urlencoded
@@ -28,8 +26,6 @@ app.use("/registered", registered);
 const appEnv = cfenv.getAppEnv();
 const PORT = appEnv.port || 3000;
 
-// Start scheduler that handles jobs.
-schedule.start();
 
 // start server on the specified port and binding host
 app.listen(PORT, "0.0.0.0", function() {
